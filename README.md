@@ -140,11 +140,10 @@ Exemplar messages.title.json:
 ### 5. More reliable than before!
 Unlike the previous (1.12.x) versions, errors will not cause Minecraft to crash with no report.
 Instead it is aimed to show errors to the user as much as possible.
+Config errors are logged, and shown in chat once you join a world.
 If you're facing any sort of problem, do not hasitate giving our Discord Server a visit!
 
 (👾 Discord Invite: https://discordapp.com/invite/KNxxdvN)
-
-![Error Display Preview](preview/error_preview.png)
 
 ## Translations
 * My Guildies: Elanor & Vaelios - German and French translations :tada:

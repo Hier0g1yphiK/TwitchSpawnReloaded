@@ -1,27 +1,29 @@
 package net.programmer.igoodie.twitchspawn.network.packet;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.resources.ResourceLocation;
 import net.programmer.igoodie.twitchspawn.client.gui.StatusIndicatorOverlay;
+import net.programmer.igoodie.twitchspawn.network.NetworkManager;
+import net.programmer.igoodie.twitchspawn.network.TwitchSpawnPacket;
 
-import java.util.function.Supplier;
+public class StatusChangedPacket implements TwitchSpawnPacket {
 
-public class StatusChangedPacket {
+    @Override
+    public ResourceLocation getId() {
+        return NetworkManager.STATUS_CHANGED;
+    }
 
-    public static void encode(StatusChangedPacket packet, FriendlyByteBuf buffer) {
-        buffer.writeBoolean(packet.status);
+    @Override
+    public void encode(FriendlyByteBuf buffer) {
+        buffer.writeBoolean(status);
     }
 
     public static StatusChangedPacket decode(FriendlyByteBuf buffer) {
         return new StatusChangedPacket(buffer.readBoolean());
     }
 
-    public static void handle(final StatusChangedPacket packet,
-                              Supplier<NetworkEvent.Context> context) {
-        context.get().enqueueWork(() -> {
-            StatusIndicatorOverlay.setRunning(packet.status);
-        });
-        context.get().setPacketHandled(true);
+    public static void handle(final StatusChangedPacket packet) {
+        StatusIndicatorOverlay.setRunning(packet.status);
     }
 
     /* ---------------------------- */

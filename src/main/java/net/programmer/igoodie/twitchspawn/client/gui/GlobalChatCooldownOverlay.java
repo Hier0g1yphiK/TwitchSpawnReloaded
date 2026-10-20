@@ -6,9 +6,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.programmer.igoodie.twitchspawn.TwitchSpawn;
 import net.programmer.igoodie.twitchspawn.configuration.ConfigManager;
 import net.programmer.igoodie.twitchspawn.configuration.PreferencesConfig;
@@ -20,25 +17,12 @@ public class GlobalChatCooldownOverlay {
             new ResourceLocation(TwitchSpawn.MOD_ID, "textures/cooldown.png");
 
     private static long timestamp = -1;
-    private static boolean drew = false;
 
     public static void setCooldownTimestamp(long timestamp) {
         GlobalChatCooldownOverlay.timestamp = timestamp;
     }
 
-    @SubscribeEvent
-    public static void onRenderGuiPre(RenderGameOverlayEvent.Pre event) {
-        drew = false;
-    }
-
-    @SubscribeEvent
-    public static void onRenderGuiPost(RenderGameOverlayEvent.Post event) {
-        if (event.getType() != ElementType.TEXT)
-            return; // Render only on HOTBAR
-
-        // Already drew, stop here
-        if (drew) return;
-
+    public static void render(PoseStack matrixStack) {
         long cooldown = (timestamp - CooldownBucket.now()) / 1000;
 
         if (cooldown > 0) {
@@ -61,8 +45,6 @@ public class GlobalChatCooldownOverlay {
                 y = 5;
             }
 
-            PoseStack matrixStack = event.getMatrixStack();
-
             matrixStack.pushPose();
             matrixStack.scale(scale, scale, scale);
             renderGlyph(matrixStack, String.format("%02d", minutes), x, (int) (y / scale));
@@ -71,8 +53,6 @@ public class GlobalChatCooldownOverlay {
             renderGlyph(matrixStack, "i", (int) (x + 10 + 4.25f * 18), (int) ((y - 2) / scale));
             matrixStack.popPose();
         }
-
-        drew = true;
     }
 
     public static void renderGlyph(PoseStack ms, String number, int x, int y) {

@@ -2,6 +2,7 @@ package net.programmer.igoodie.twitchspawn.tslanguage.action;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.core.Registry;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
@@ -69,7 +70,7 @@ public class SummonAction extends TSLAction {
     @Override
     protected void performAction(ServerPlayer player, EventArguments args) {
         String command = String.format("/summon %s %s %s %s %s",
-                entityType.getRegistryName(),
+                Registry.ENTITY_TYPE.getKey(entityType),
                 rawCoordX,
                 rawCoordY,
                 rawCoordZ,

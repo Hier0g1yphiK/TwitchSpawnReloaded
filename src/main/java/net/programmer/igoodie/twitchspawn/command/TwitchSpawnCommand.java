@@ -29,7 +29,7 @@ import net.programmer.igoodie.twitchspawn.tslanguage.keyword.TSLEventKeyword;
 import net.programmer.igoodie.twitchspawn.tslanguage.parser.TSLParser;
 import net.programmer.igoodie.twitchspawn.tslanguage.parser.TSLSyntaxError;
 import net.programmer.igoodie.twitchspawn.tslanguage.parser.TSLTokenizer;
-import net.programmer.igoodie.twitchspawn.util.MCPHelpers;
+import net.programmer.igoodie.twitchspawn.util.ComponentHelpers;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -330,11 +330,11 @@ public class TwitchSpawnCommand {
             eventArguments.actorNickname = "TesterKid";
 
             for (TSLAction action : event.getActions()) {
-                Component text = MCPHelpers.fromJsonLenient(
+                Component text = ComponentHelpers.fromJsonLenient(
                         String.format("{text:\"Testing %s action\", color:\"dark_purple\"}", TSLActionKeyword.ofClass(action.getClass())));
                 ClientboundSetTitleTextPacket packet = new ClientboundSetTitleTextPacket(text);
 
-                Component subtext = MCPHelpers.fromJsonLenient(
+                Component subtext = ComponentHelpers.fromJsonLenient(
                         String.format("{text:\"Rules traversed: %.02f%%\", color:\"dark_purple\"}", 100 * (index + 1f) / ruleset.getRulesRaw().size()));
                 ClientboundSetSubtitleTextPacket subtitlePacket = new ClientboundSetSubtitleTextPacket(subtext);
 

@@ -1,27 +1,29 @@
 package net.programmer.igoodie.twitchspawn.network.packet;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.resources.ResourceLocation;
 import net.programmer.igoodie.twitchspawn.client.gui.GlobalChatCooldownOverlay;
+import net.programmer.igoodie.twitchspawn.network.NetworkManager;
+import net.programmer.igoodie.twitchspawn.network.TwitchSpawnPacket;
 
-import java.util.function.Supplier;
+public class GlobalChatCooldownPacket implements TwitchSpawnPacket {
 
-public class GlobalChatCooldownPacket {
+    @Override
+    public ResourceLocation getId() {
+        return NetworkManager.GLOBAL_CHAT_COOLDOWN;
+    }
 
-    public static void encode(GlobalChatCooldownPacket packet, FriendlyByteBuf buffer) {
-        buffer.writeLong(packet.timestamp);
+    @Override
+    public void encode(FriendlyByteBuf buffer) {
+        buffer.writeLong(timestamp);
     }
 
     public static GlobalChatCooldownPacket decode(FriendlyByteBuf buffer) {
         return new GlobalChatCooldownPacket(buffer.readLong());
     }
 
-    public static void handle(final GlobalChatCooldownPacket packet,
-                              Supplier<NetworkEvent.Context> context) {
-        context.get().enqueueWork(() -> {
-            GlobalChatCooldownOverlay.setCooldownTimestamp(packet.timestamp);
-        });
-        context.get().setPacketHandled(true);
+    public static void handle(final GlobalChatCooldownPacket packet) {
+        GlobalChatCooldownOverlay.setCooldownTimestamp(packet.timestamp);
     }
 
     /* -------------------------------- */

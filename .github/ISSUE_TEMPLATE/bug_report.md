@@ -26,7 +26,7 @@ If applicable, add screenshots to help explain your problem.
 **Version (please complete the following information):**
  - OS: [e.g. Windows]
  - TwitchSpawn Version: [e.g. v1.1.7]
- - Forge Version: [e.g. v28.0.55]
+ - Fabric Loader / Fabric API Version: [e.g. 0.16.9 / 0.77.0+1.18.2]
 
 **Additional context**
 Add any other context about the problem here.

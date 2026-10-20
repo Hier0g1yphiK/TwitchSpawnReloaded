@@ -21,7 +21,7 @@ import net.programmer.igoodie.twitchspawn.tslanguage.keyword.TSLActionKeyword;
 import net.programmer.igoodie.twitchspawn.tslanguage.parser.TSLRuleTokenizer;
 import net.programmer.igoodie.twitchspawn.tslanguage.parser.TSLSyntaxError;
 import net.programmer.igoodie.twitchspawn.util.ExpressionEvaluator;
-import net.programmer.igoodie.twitchspawn.util.MCPHelpers;
+import net.programmer.igoodie.twitchspawn.util.ComponentHelpers;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -216,8 +216,8 @@ public abstract class TSLAction implements TSLFlowNode {
             return; // Stop here since message displaying is disabled
 
         // Form text and subtext components
-        Component text = MCPHelpers.fromJsonLenient(title);
-        Component subtext = MCPHelpers.fromJsonLenient(subtitle);
+        Component text = ComponentHelpers.fromJsonLenient(title);
+        Component subtext = ComponentHelpers.fromJsonLenient(subtitle);
 
         if (subtext != null && subtext.getString().equals("NOTHING_0xDEADC0DE_0xDEADBEEF")) {
             return; // Stop here since it was a  DISPLAYING NOTHING statement
@@ -240,8 +240,8 @@ public abstract class TSLAction implements TSLFlowNode {
 
         if (ConfigManager.PREFERENCES.messageDisplay == PreferencesConfig.MessageDisplay.CHAT) {
             UUID uuid = player.getUUID();
-            if (text != null) player.sendMessage(MCPHelpers.merge(new TextComponent(">> "), text), uuid);
-            if (subtext != null) player.sendMessage(MCPHelpers.merge(new TextComponent(">> "), subtext), uuid);
+            if (text != null) player.sendMessage(ComponentHelpers.merge(new TextComponent(">> "), text), uuid);
+            if (subtext != null) player.sendMessage(ComponentHelpers.merge(new TextComponent(">> "), subtext), uuid);
         }
     }
 

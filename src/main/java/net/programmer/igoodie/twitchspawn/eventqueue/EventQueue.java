@@ -1,7 +1,6 @@
 package net.programmer.igoodie.twitchspawn.eventqueue;
 
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkDirection;
 import net.programmer.igoodie.twitchspawn.TwitchSpawn;
 import net.programmer.igoodie.twitchspawn.network.NetworkManager;
 import net.programmer.igoodie.twitchspawn.network.packet.GlobalChatCooldownPacket;
@@ -136,11 +135,7 @@ public class EventQueue {
                         .getPlayerByName(args.streamerNickname);
 
                 if (playerEntity != null) {
-                    NetworkManager.CHANNEL.sendTo(
-                            new GlobalChatCooldownPacket(cooldownBucket.getGlobalCooldownTimestamp()),
-                            playerEntity.connection.connection,
-                            NetworkDirection.PLAY_TO_CLIENT
-                    );
+                    NetworkManager.sendTo(playerEntity, new GlobalChatCooldownPacket(cooldownBucket.getGlobalCooldownTimestamp()));
                 }
             }
         }

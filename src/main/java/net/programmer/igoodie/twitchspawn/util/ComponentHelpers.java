@@ -3,7 +3,7 @@ package net.programmer.igoodie.twitchspawn.util;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
-public class MCPHelpers {
+public class ComponentHelpers {
 
     public static Component fromJsonLenient(String string) {
         return Component.Serializer.fromJsonLenient(string);

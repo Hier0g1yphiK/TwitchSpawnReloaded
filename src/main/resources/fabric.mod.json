@@ -5,8 +5,11 @@
   "name": "TwitchSpawn",
   "description": "TwitchSpawn listens for live events related to your Twitch channel using various Socket APIs.\nThen it handles those events with the rules handcrafted by you!",
   "authors": ["iGoodie"],
+  "contributors": ["Hier0g1yphiK"],
   "contact": {
-    "issues": "https://github.com/iGoodie/TwitchSpawn/issues"
+    "homepage": "https://github.com/Hier0g1yphiK/TwitchSpawnReloaded",
+    "sources": "https://github.com/Hier0g1yphiK/TwitchSpawnReloaded",
+    "issues": "https://github.com/Hier0g1yphiK/TwitchSpawnReloaded/issues"
   },
   "license": "EPL-1.0",
   "icon": "pack.png",

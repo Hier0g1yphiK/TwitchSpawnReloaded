@@ -150,13 +150,27 @@ public class UtilsTests {
         List<Integer> list = Collections.synchronizedList(new LinkedList<>());
         CountDownLatch done = new CountDownLatch(1);
 
+        // The worker thread starts consuming as soon as a task exists, so hold it inside a gate task
+        // while the rest is queued. Otherwise it may run 1 before queueFirst puts 0 in front.
+        CountDownLatch gateEntered = new CountDownLatch(1);
+        CountDownLatch gateReleased = new CountDownLatch(1);
+        queue.queue(() -> {
+            gateEntered.countDown();
+            try { gateReleased.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        });
+        // Keep nudging: a wake-up sent just before the worker starts waiting is lost
+        for (int attempt = 0; attempt < 500 && !gateEntered.await(10, TimeUnit.MILLISECONDS); attempt++) {
+            queue.updateThread();
+        }
+        Assertions.assertEquals(0, gateEntered.getCount(), "Queue never started");
+
         queue.queue(() -> list.add(1));
         queue.queue(() -> list.add(2));
         queue.queueSleep(50);
         queue.queue(() -> list.add(3));
         queue.queueFirst("First", () -> list.add(0));
         queue.queue(done::countDown);
-        queue.updateThread();
+        gateReleased.countDown();
 
         Assertions.assertTrue(done.await(5, TimeUnit.SECONDS), "Queue never finished");
         Assertions.assertIterableEquals(Arrays.asList(0, 1, 2, 3), list);

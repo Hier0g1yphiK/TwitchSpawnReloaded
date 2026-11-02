@@ -1,4 +1,4 @@
-<p align="center"><img src="https://raw.githubusercontent.com/iGoodie/TwitchSpawn/master/.github/assets/logo.png"></p>
+<p align="center"><img src=".github/assets/logo.png"></p>
 
 <!-- Badges -->
 <p align="center">
@@ -8,6 +8,7 @@
   <br/>
   <a href="https://fabricmc.net/"><img src="https://img.shields.io/badge/modloader-fabric-dbd0b4.svg"></a>
   <a href="https://www.minecraft.net/"><img src="https://img.shields.io/badge/minecraft-26.3-62b47a.svg"></a>
+  <a href="https://github.com/Hier0g1yphiK/TwitchSpawnReloaded/actions/workflows/build.yml"><img src="https://github.com/Hier0g1yphiK/TwitchSpawnReloaded/actions/workflows/build.yml/badge.svg?branch=main"></a>
   <br/>
   <a href="https://minecraft.curseforge.com/projects/twitchspawn"><img src="http://cf.way2muchnoise.eu/full_273382_downloads.svg"></a>
   <a href="https://minecraft.curseforge.com/projects/twitchspawn"><img src="http://cf.way2muchnoise.eu/versions/273382.svg"></a>
@@ -15,6 +16,10 @@
   <a href="https://twitter.com/iGoodiex"><img src="https://img.shields.io/twitter/follow/iGoodiex?style=social"></a>
   <a href="https://www.patreon.com/iGoodie"><img src="https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.herokuapp.com%2Figoodie"></a>
 </p>
+
+> **TwitchSpawn Reloaded** is a Fabric port of [TwitchSpawn](https://github.com/iGoodie/TwitchSpawn) for Minecraft 26.3, by [Hier0g1yphiK](https://github.com/Hier0g1yphiK).
+> The original mod is by [iGoodie](https://github.com/iGoodie). This port moves it from Forge to Fabric, updates it from Minecraft 1.18.2 to 26.3, and adds tests and automated builds.
+> Please report problems with this version on [this repository](https://github.com/Hier0g1yphiK/TwitchSpawnReloaded/issues), not the original.
 
 TwitchSpawn now runs on **Fabric** for **Minecraft 26.3**! :tada:
 Your configs, rules and TSL scripts carry over from the Forge version (see the [26.3 notes](#upgrading-rules-to-263) for item and gamerule syntax changes). (See the [user manual](https://igoodie.gitbook.io/twitchspawn/)!)
@@ -217,8 +222,12 @@ They cover:
 * [SE7-KN8](https://github.com/SE7-KN8) - German translation of `test` command module keys
 
 If you would like to contribute to the translations, consider modifying
-[languages](https://github.com/iGoodie/TwitchSpawn/tree/master/src/main/resources/assets/twitchspawn/lang)
+[languages](https://github.com/Hier0g1yphiK/TwitchSpawnReloaded/tree/main/src/main/resources/assets/twitchspawn/lang)
 and creating a PR!
+
+## Credits
+* [iGoodie](https://github.com/iGoodie) - Original author of TwitchSpawn and the TwitchSpawn Language
+* [Hier0g1yphiK](https://github.com/Hier0g1yphiK) - Fabric port, Minecraft 26.3 update, tests and CI for TwitchSpawn Reloaded
 
 ## Special Thanks
 Special thanks to each one of those beautiful people:
@@ -238,6 +247,5 @@ Special thanks to each one of those beautiful people:
 * And every single person in our [Discord Server](https://discord.gg/KNxxdvN) for keeping us motivated on this project!
 
 ## Facing an Issue?
-- Join our Discord Server - https://discordapp.com/invite/KNxxdvN
-- Contact iGoodie via Discord: iGoodie#1945
-- Create an issue on Github: https://github.com/iGoodie/TwitchSpawn/issues
+- For problems with this Fabric / 26.3 version, create an issue here: https://github.com/Hier0g1yphiK/TwitchSpawnReloaded/issues
+- For general TwitchSpawn questions, join the original Discord Server - https://discordapp.com/invite/KNxxdvN

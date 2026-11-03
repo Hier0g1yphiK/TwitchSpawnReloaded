@@ -8,16 +8,19 @@ import net.programmer.igoodie.twitchspawn.tslanguage.event.EventArguments;
 import net.programmer.igoodie.twitchspawn.tslanguage.event.TSLEvent;
 import net.programmer.igoodie.twitchspawn.util.CooldownBucket;
 
+import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Iterator;
 
 public class EventQueue {
 
+    // Guards tasks, state, waitingForServer and the counters. Producers (socket tracers, the server thread)
+    // and the worker thread all go through it, and the worker waits on it.
+    private final Object lock = new Object();
     private final Thread innerThread;
     private volatile EventQueueState state;
-    private volatile Deque<EventQueueTask> tasks;
-    private volatile boolean waitingForServer;
+    private final Deque<EventQueueTask> tasks;
+    private boolean waitingForServer;
     private long cooldown; // milliseconds
     private int succeededEvents;
     private int discardedEvents;
@@ -27,7 +30,7 @@ public class EventQueue {
             while (true) stepThread();
         }, "TwitchSpawn Event Queue");
         this.state = EventQueueState.PAUSED;
-        this.tasks = new LinkedList<>();
+        this.tasks = new ArrayDeque<>();
         this.cooldown = cooldownDuration;
 
         this.innerThread.start();
@@ -35,63 +38,60 @@ public class EventQueue {
 
     private void stepThread() {
         try {
-            if (hasUnhandledEvent()) {
-                if (waitingForServer) {
-                    // TODO: Sleep?
-                    return;
+            EventQueueTask task = takeTask();
+
+            task.run();
+
+            if (task.getType() == EventQueueTask.Type.SLEEP) {
+                synchronized (lock) {
+                    if (state == EventQueueState.COOLDOWN) state = EventQueueState.WORKING;
                 }
-
-                EventQueueTask task = tasks.remove();
-
-                if (task.getType() == EventQueueTask.Type.SLEEP)
-                    state = EventQueueState.COOLDOWN;
-
-                task.run();
-
-                if (task.getType() == EventQueueTask.Type.SLEEP)
-                    state = EventQueueState.WORKING;
-
-            } else {
-                pause();
             }
 
         } catch (Throwable e) {
-            discardedEvents++;
+            synchronized (lock) {
+                discardedEvents++;
+            }
             e.printStackTrace(); // TODO:
         }
     }
 
-    private void unpause() {
-        synchronized (innerThread) {
-            state = EventQueueState.WORKING;
-            innerThread.notifyAll();
-        }
-    }
-
-    private void pause() {
-        synchronized (innerThread) {
-            try {
-                state = EventQueueState.PAUSED;
-                innerThread.wait();
-
-            } catch (InterruptedException e) {
-                e.printStackTrace(); // TODO
+    /**
+     * Blocks until the queue is unpaused, the server finished the previous TSL event and a task is available.
+     * The conditions are re-checked under the lock after every wake-up, so no notify can slip in between.
+     */
+    private EventQueueTask takeTask() throws InterruptedException {
+        synchronized (lock) {
+            while (true) {
+                if (tasks.isEmpty()) state = EventQueueState.PAUSED;
+                if (state != EventQueueState.PAUSED && !waitingForServer) break;
+                lock.wait();
             }
+
+            EventQueueTask task = tasks.removeFirst();
+            if (task.getType() == EventQueueTask.Type.SLEEP)
+                state = EventQueueState.COOLDOWN;
+            return task;
         }
     }
 
     public void updateThread() {
-        if (state == EventQueueState.PAUSED) unpause();
+        synchronized (lock) {
+            if (state == EventQueueState.PAUSED) {
+                state = EventQueueState.WORKING;
+                lock.notifyAll();
+            }
+        }
     }
 
     public void cancelUpcomingSleep() {
-        assert this.tasks instanceof LinkedList;
-        List<EventQueueTask> tasks = (LinkedList<EventQueueTask>) this.tasks;
-        for (int i = 0; i < tasks.size(); i++) {
-            EventQueueTask task = tasks.get(i);
-            if (task.getType() == EventQueueTask.Type.SLEEP) {
-                tasks.remove(i);
-                return;
+        synchronized (lock) {
+            Iterator<EventQueueTask> iterator = tasks.iterator();
+            while (iterator.hasNext()) {
+                if (iterator.next().getType() == EventQueueTask.Type.SLEEP) {
+                    iterator.remove();
+                    return;
+                }
             }
         }
     }
@@ -101,7 +101,7 @@ public class EventQueue {
     }
 
     public void queueSleepFirst(long millis) {
-        tasks.addFirst(new EventQueueTask("Sleep", millis));
+        addFirst(new EventQueueTask("Sleep", millis));
     }
 
     public void queueSleep() {
@@ -109,12 +109,11 @@ public class EventQueue {
     }
 
     public void queueSleep(long millis) {
-        tasks.add(new EventQueueTask("Sleep", millis));
+        addLast(new EventQueueTask("Sleep", millis));
     }
 
     public void queueFirst(String name, Runnable task) {
-        tasks.addFirst(new EventQueueTask(name, task));
-
+        addFirst(new EventQueueTask(name, task));
     }
 
     public void queue(Runnable task) {
@@ -122,7 +121,7 @@ public class EventQueue {
     }
 
     public void queue(String name, Runnable task) {
-        tasks.add(new EventQueueTask(name, task));
+        addLast(new EventQueueTask(name, task));
     }
 
     public void queue(TSLEvent eventNode, EventArguments args, CooldownBucket cooldownBucket) {
@@ -140,46 +139,85 @@ public class EventQueue {
             }
         }
 
-        tasks.add(new EventQueueTask("TSL Event task", () -> {
-            waitingForServer = true;
-            TwitchSpawn.SERVER.execute(() -> {
-                try {
-                    boolean performed = eventNode.process(args);
+        addLast(new EventQueueTask("TSL Event task", () -> {
+            synchronized (lock) {
+                waitingForServer = true;
+            }
+            try {
+                TwitchSpawn.SERVER.execute(() -> {
+                    boolean performed = false;
+                    try {
+                        performed = eventNode.process(args);
 
-                    if (performed) succeededEvents++;
-                    else discardedEvents++;
+                    } catch (Throwable e) {
+                        // TODO: "Event failed HUD" maybe?
 
-                } catch (Throwable e) {
-                    discardedEvents++;
-                    // TODO: "Event failed HUD" maybe?
-
-                } finally {
+                    } finally {
+                        serverTaskFinished(performed);
+                    }
+                });
+            } catch (Throwable e) {
+                // The server refused the task, so nothing will ever clear waitingForServer
+                synchronized (lock) {
                     waitingForServer = false;
+                    lock.notifyAll();
                 }
-            });
+                throw e;
+            }
         }));
     }
 
-    public synchronized int succeededEventCount() {
-        return succeededEvents;
+    private void serverTaskFinished(boolean performed) {
+        synchronized (lock) {
+            if (performed) succeededEvents++;
+            else discardedEvents++;
+            waitingForServer = false;
+            lock.notifyAll();
+        }
     }
 
-    public synchronized int discardedEventCount() {
-        return discardedEvents;
+    private void addFirst(EventQueueTask task) {
+        synchronized (lock) {
+            tasks.addFirst(task);
+        }
     }
 
-    public synchronized int unhandledEventCount() {
-        return tasks.size();
+    private void addLast(EventQueueTask task) {
+        synchronized (lock) {
+            tasks.addLast(task);
+        }
     }
 
-    public synchronized boolean hasUnhandledEvent() {
-        return !tasks.isEmpty();
+    public int succeededEventCount() {
+        synchronized (lock) {
+            return succeededEvents;
+        }
+    }
+
+    public int discardedEventCount() {
+        synchronized (lock) {
+            return discardedEvents;
+        }
+    }
+
+    public int unhandledEventCount() {
+        synchronized (lock) {
+            return tasks.size();
+        }
+    }
+
+    public boolean hasUnhandledEvent() {
+        synchronized (lock) {
+            return !tasks.isEmpty();
+        }
     }
 
     public void reset() {
-        tasks.clear();
-        succeededEvents = 0;
-        discardedEvents = 0;
+        synchronized (lock) {
+            tasks.clear();
+            succeededEvents = 0;
+            discardedEvents = 0;
+        }
     }
 
 }

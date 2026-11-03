@@ -102,11 +102,11 @@ EITHER # Selects one random action
  DROP %iron_block[custom_name="Iron Golem Body"]% 2
  OR
  # Or summons a zombie on given coordinate
- SUMMON minecraft:zombie ~ ~+10 ~
+ SUMMON minecraft:zombie ~ ~10 ~
  # By displaying one common message for any action selected!
  ALL DISPLAYING %["Get ready for spoils of battle!"]%
  ON Donation
- WITH amount IN RANGE [21, 999]
+ WITH amount IN RANGE [21,999]
 
 # Executes a Minecraft command as the streamer being the source!
 EXECUTE %/gamerule keep_inventory true%

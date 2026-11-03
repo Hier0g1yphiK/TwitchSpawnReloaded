@@ -54,7 +54,8 @@ public class SummonAction extends TSLAction {
         }
     }
 
-    private String validateCoordinateExpression(String expression) throws TSLSyntaxError {
+    // TSL accepts a leading "+" (e.g "~+10"), but /summon doesn't, so it is dropped here
+    static String validateCoordinateExpression(String expression) throws TSLSyntaxError {
         if (expression.equals("~"))
             return expression;
 
@@ -68,7 +69,7 @@ public class SummonAction extends TSLAction {
             throw new TSLSyntaxError("Malformed position expression -> %s", expression);
         }
 
-        return expression;
+        return expression.replaceFirst("^(~?)\\+", "$1");
     }
 
     @Override
@@ -86,9 +87,8 @@ public class SummonAction extends TSLAction {
 
     @Override
     protected String subtitleEvaluator(String expression, EventArguments args) {
-        // XXX: Dunno where that went... Fix that later?
-//        if (expression.equals("mobName"))
-//            return entityType.getName().getString();
+        if (expression.equals("mobName"))
+            return entityType.getDescription().getString();
         return null;
     }
 

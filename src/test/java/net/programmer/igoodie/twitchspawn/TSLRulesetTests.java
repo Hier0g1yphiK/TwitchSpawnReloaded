@@ -10,6 +10,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class TSLRulesetTests {
 
     @BeforeAll
@@ -96,6 +102,17 @@ public class TSLRulesetTests {
         ).replace("\n", "\n\n"); // Rules are separated by blank lines
 
         Assertions.assertDoesNotThrow(() -> new TSLRuleset(script));
+    }
+
+    @Test
+    @DisplayName("should parse the TSL example in the README.")
+    public void readmeExampleTest() throws IOException {
+        String readme = Files.readString(Path.of("README.md"));
+        Matcher matcher = Pattern.compile("```coffeescript\\R(.*?)```", Pattern.DOTALL).matcher(readme);
+        Assertions.assertTrue(matcher.find(), "README has no TSL example");
+
+        TSLRuleset ruleset = Assertions.assertDoesNotThrow(() -> new TSLRuleset(matcher.group(1)));
+        Assertions.assertTrue(ruleset.willPerform(donation(500)), "The [21,999] donation rule should match");
     }
 
     @ParameterizedTest(name = "rejects: {0}")

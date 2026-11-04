@@ -50,7 +50,7 @@ public class TwitchSpawnLoadingErrors extends Exception {
                 i18nMessage = "twitchspawn.error.unknown";
 
             messages.add(Component.translatable(i18nMessage,
-                    exception.getMessage(),
+                    String.valueOf(exception.getMessage()),
                     exception.getClass().getSimpleName()));
         }
 

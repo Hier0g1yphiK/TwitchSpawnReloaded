@@ -194,7 +194,7 @@ public class TwitchSpawnCommand {
         if (rulesetName == null) {
             context.getSource().sendSuccess(() -> Component.translatable(
                     "commands.twitchspawn.rules.list",
-                    ConfigManager.RULESET_COLLECTION.getStreamers()), true);
+                    String.join(", ", ConfigManager.RULESET_COLLECTION.getStreamers())), true);
             return 1;
         }
 
@@ -271,7 +271,7 @@ public class TwitchSpawnCommand {
             ConfigManager.RULESET_COLLECTION.handleEvent(simulatedEvent);
 
             context.getSource().sendSuccess(() -> Component.translatable(
-                    "commands.twitchspawn.simulate.success", nbt), true);
+                    "commands.twitchspawn.simulate.success", nbt.toString()), true);
 
             return 1;
         } catch (Exception e) {

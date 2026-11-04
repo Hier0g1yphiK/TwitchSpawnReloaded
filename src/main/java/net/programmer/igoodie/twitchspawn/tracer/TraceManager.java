@@ -18,6 +18,8 @@ import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 
 import java.util.*;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class TraceManager {
@@ -44,12 +46,8 @@ public class TraceManager {
 
         running = true;
 
-        Dispatcher dispatcher = new Dispatcher();
-        dispatcher.setMaxRequests(100);
-        dispatcher.setMaxRequestsPerHost(100);
-
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                .dispatcher(dispatcher)
+                .dispatcher(createDispatcher())
                 .readTimeout(0, TimeUnit.MILLISECONDS)
                 .build();
 
@@ -73,6 +71,24 @@ public class TraceManager {
             player.sendSystemMessage(successText);
             NetworkManager.sendTo(player, new StatusChangedPacket(true));
         }
+    }
+
+    /**
+     * OkHttp's default dispatcher keeps idle non-daemon worker threads for 60 seconds,
+     * which stops the game from exiting after the tracers were used.
+     */
+    public static Dispatcher createDispatcher() {
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60, TimeUnit.SECONDS,
+                new SynchronousQueue<>(), runnable -> {
+            Thread thread = new Thread(runnable, "TwitchSpawn OkHttp Dispatcher");
+            thread.setDaemon(true);
+            return thread;
+        });
+
+        Dispatcher dispatcher = new Dispatcher(executor);
+        dispatcher.setMaxRequests(100);
+        dispatcher.setMaxRequestsPerHost(100);
+        return dispatcher;
     }
 
     public void stop(CommandSourceStack source, String reason) {

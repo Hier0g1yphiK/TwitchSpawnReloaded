@@ -54,12 +54,8 @@ public abstract class WebSocketTracer {
     }
 
     protected WebSocket startClient(WebSocketListener listener) {
-        Dispatcher dispatcher = new Dispatcher();
-        dispatcher.setMaxRequests(100);
-        dispatcher.setMaxRequestsPerHost(100);
-
         OkHttpClient client = new OkHttpClient.Builder()
-                .dispatcher(dispatcher)
+                .dispatcher(TraceManager.createDispatcher())
                 .readTimeout(0, TimeUnit.MILLISECONDS)
                 .build();
 

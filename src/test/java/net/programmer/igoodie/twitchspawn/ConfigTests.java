@@ -2,6 +2,7 @@ package net.programmer.igoodie.twitchspawn;
 
 import com.electronwill.nightconfig.core.io.ParsingException;
 import com.google.gson.JsonSyntaxException;
+import com.mojang.serialization.JsonOps;
 import net.programmer.igoodie.twitchspawn.configuration.CredentialsConfig;
 import net.programmer.igoodie.twitchspawn.configuration.SubtitlesConfig;
 import net.programmer.igoodie.twitchspawn.configuration.TitlesConfig;
@@ -9,6 +10,7 @@ import net.programmer.igoodie.twitchspawn.tracer.Platform;
 import net.programmer.igoodie.twitchspawn.tslanguage.keyword.TSLActionKeyword;
 import net.programmer.igoodie.twitchspawn.tslanguage.keyword.TSLEventKeyword;
 import net.programmer.igoodie.twitchspawn.tslanguage.parser.TSLSyntaxError;
+import net.programmer.igoodie.twitchspawn.util.RegistryHelpers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -130,6 +132,22 @@ public class ConfigTests {
                 "twitchspawn.error.json",
                 "twitchspawn.error.unknown"
         ), keys);
+    }
+
+    @Test
+    @DisplayName("should build loading-error messages that can be sent to the client.")
+    public void loadingErrorsEncodableTest() {
+        TestResources.bootstrapMinecraft();
+        TwitchSpawnLoadingErrors errors = new TwitchSpawnLoadingErrors();
+        errors.addException(new TSLSyntaxError("Bad rule"));
+        errors.addException(new IllegalStateException()); // No message
+
+        // Translation arguments must be text, numbers, booleans or components, otherwise the chat packet fails to encode
+        for (net.minecraft.network.chat.Component message : errors.toWarningMessages()) {
+            Assertions.assertDoesNotThrow(() -> net.minecraft.network.chat.ComponentSerialization.CODEC
+                    .encodeStart(RegistryHelpers.lookup().createSerializationContext(JsonOps.INSTANCE), message)
+                    .getOrThrow(), "Cannot encode " + message);
+        }
     }
 
 }

@@ -29,6 +29,7 @@ public class EventQueue {
         this.innerThread = new Thread(() -> {
             while (true) stepThread();
         }, "TwitchSpawn Event Queue");
+        this.innerThread.setDaemon(true); // Never keeps the game running after it closes
         this.state = EventQueueState.PAUSED;
         this.tasks = new ArrayDeque<>();
         this.cooldown = cooldownDuration;

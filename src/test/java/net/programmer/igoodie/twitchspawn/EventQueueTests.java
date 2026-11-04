@@ -16,6 +16,19 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
 public class EventQueueTests {
 
     @Test
+    @DisplayName("should run on a daemon thread, so it never keeps the game from exiting.")
+    public void daemonThreadTest() {
+        new EventQueue(0);
+
+        List<Thread> queueThreads = Thread.getAllStackTraces().keySet().stream()
+                .filter(thread -> thread.getName().equals("TwitchSpawn Event Queue"))
+                .toList();
+
+        Assertions.assertFalse(queueThreads.isEmpty(), "No event queue thread found");
+        queueThreads.forEach(thread -> Assertions.assertTrue(thread.isDaemon(), "Event queue thread is not a daemon"));
+    }
+
+    @Test
     @Timeout(value = 30, unit = TimeUnit.SECONDS)
     @DisplayName("should run every task queued from many threads exactly once.")
     public void concurrentProducersTest() throws InterruptedException {

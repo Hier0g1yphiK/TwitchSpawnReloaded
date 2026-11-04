@@ -25,7 +25,7 @@ If applicable, add screenshots to help explain your problem.
 
 **Version (please complete the following information):**
  - OS: [e.g. Windows]
- - Minecraft / TwitchSpawn Version: [e.g. 26.3 / v2.0.3]
+ - Minecraft / TwitchSpawn Version: [e.g. 26.3 / v2.0.4]
  - Fabric Loader / Fabric API Version: [e.g. 0.19.5 / 0.164.0+26.3]
 
 **Additional context**

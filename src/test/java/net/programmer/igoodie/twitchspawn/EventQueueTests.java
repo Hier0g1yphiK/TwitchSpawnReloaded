@@ -16,6 +16,24 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
 public class EventQueueTests {
 
     @Test
+    @DisplayName("should run tracer HTTP work on daemon threads, so it never keeps the game from exiting.")
+    public void tracerDispatcherDaemonTest() throws InterruptedException {
+        okhttp3.Dispatcher dispatcher = net.programmer.igoodie.twitchspawn.tracer.TraceManager.createDispatcher();
+        CountDownLatch ran = new CountDownLatch(1);
+        boolean[] daemon = new boolean[1];
+
+        dispatcher.executorService().execute(() -> {
+            daemon[0] = Thread.currentThread().isDaemon();
+            ran.countDown();
+        });
+
+        Assertions.assertTrue(ran.await(5, TimeUnit.SECONDS));
+        Assertions.assertTrue(daemon[0], "OkHttp dispatcher thread is not a daemon");
+        Assertions.assertEquals(100, dispatcher.getMaxRequests());
+        Assertions.assertEquals(100, dispatcher.getMaxRequestsPerHost());
+    }
+
+    @Test
     @DisplayName("should run on a daemon thread, so it never keeps the game from exiting.")
     public void daemonThreadTest() {
         new EventQueue(0);

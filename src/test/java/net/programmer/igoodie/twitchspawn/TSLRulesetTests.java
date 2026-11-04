@@ -40,9 +40,34 @@ public class TSLRulesetTests {
         TSLRuleset ruleset = Assertions.assertDoesNotThrow(() -> new TSLRuleset(script),
                 "Default rules must parse, otherwise first launch fails");
 
-        Assertions.assertNotNull(ruleset.getEventHandler("Donation"));
-        Assertions.assertNotNull(ruleset.getEventHandler("Twitch Follow"));
-        Assertions.assertFalse(ruleset.getRulesRaw().isEmpty());
+        // The default ruleset doubles as the template, so it should show every live event
+        for (String event : new String[]{
+                "Donation", "Twitch Follow", "Twitch Subscription", "Twitch Subscription Gift", "Twitch Bits",
+                "Twitch Raid", "Twitch Channel Point Reward", "Twitch Chat Message",
+                "Youtube Superchat", "Youtube Sponsor", "Youtube Subscription",
+                "Tiltify Donation", "ExtraLife Donation", "DonorDrive Donation", "JustGiving Donation",
+                "Patreon Pledge", "TreatStream Treat"}) {
+            Assertions.assertNotNull(ruleset.getEventHandler(event), "Default ruleset has no rule for " + event);
+        }
+    }
+
+    @Test
+    @DisplayName("should parse the advanced examples commented out in the default ruleset.")
+    public void defaultRulesetAdvancedExamplesTest() {
+        String script = TestResources.loadAsString("assets/twitchspawn/default/rules.default.tsl");
+        String advanced = script.substring(script.indexOf("ADVANCED EXAMPLES"));
+
+        // Uncomment "#ACTION ..." and "# ON/WITH ..." lines, keeping blank lines between rules
+        StringBuilder enabled = new StringBuilder();
+        for (String line : advanced.split("\\R")) {
+            if (line.matches("#[A-Z_]+ .*") || line.matches("# (ON|WITH) .*"))
+                enabled.append(line.substring(1)).append("\n");
+            else if (line.isBlank())
+                enabled.append("\n");
+        }
+
+        TSLRuleset ruleset = Assertions.assertDoesNotThrow(() -> new TSLRuleset(enabled.toString()));
+        Assertions.assertEquals(3, ruleset.getRulesRaw().size());
     }
 
     @Test

@@ -1,31 +1,314 @@
-# Example TSL (TwitchSpawn Language) Rule Set
-# Feel free to edit this one, or create your own rule set!
-# For full documentation about TSL Language
-# See https://igoodie.gitbook.io/twitchspawn/
+#*
+  TwitchSpawn Reloaded - Default Rule Set (Minecraft 26.3)
+  =========================================================
+  This file decides what happens in-game when something happens on your stream.
+  Edit it freely, then run /twitchspawn reloadcfg (while TwitchSpawn is stopped) to apply your changes.
 
-# Donation Rules
-DROP minecraft:stick 2
- ON Donation
- WITH amount IN RANGE [0,20]
+  HOW A RULE LOOKS
+    <ACTION> <action options>
+     [DISPLAYING %[ ...text components... ]%]   <- optional custom on-screen message
+     ON <Event Name>
+     [WITH <property> <comparator> <value>]     <- optional, add as many WITH lines as you like (all must match)
 
-DROP minecraft:diamond_block 1
- ON Donation
- WITH amount IN RANGE [21,999]
+  Separate rules with an empty line. Lines starting with # are comments.
+  Wrap anything that contains spaces in %...% (items with components, commands, multi-word values).
+  Write \% for a literal % sign inside %...%.
 
+  IMPORTANT: when several rules match an event, only the FIRST matching rule (top to bottom) runs.
+  So put specific rules (big donations, Prime subs) ABOVE the general ones.
+
+  ACTIONS
+    DROP <item> [amount]                  Drops an item at your feet. Items take components: diamond_sword[enchantments={sharpness:5}]
+    SUMMON <mob> [x y z] [%{nbt}%]        Spawns a mob. ~ is relative to you, e.g. ~ ~ ~5 is 5 blocks away
+    EXECUTE %/cmd% [%/cmd% ...]           Runs commands as you, with full permissions
+    THROW <slot> [FROM <inventory>]       Throws an item out of your inventory
+    CLEAR <slot> [FROM <inventory>]       Deletes items
+    CHANGE <slot> [FROM <inventory>] INTO <item> [amount]   Replaces items
+    SHUFFLE <inventory> | SHUFFLE slot <first> <last>       Shuffles items around
+    NOTHING                               Only shows the message
+    WAIT <number> milliseconds|seconds|minutes              Pauses the rest of the queue
+    EITHER <action> OR <action> ...       Picks one at random. Weighted: EITHER CHANCE 70 PERCENT <action> OR CHANCE 30 PERCENT <action>
+    BOTH [INSTANTLY] <action> AND <action> ...              Runs all of them, one after another (or at once with INSTANTLY)
+    FOR <n> TIMES <action>                Repeats an action
+    REFLECT [ONLY] <* | n | Nick1,Nick2> <action>           Does the action to other players too (* = everyone, n = n random players)
+    OS_RUN LOCAL|REMOTE CMD|POWERSHELL|BASH %script%        Runs a script on your computer (see the bottom of this file)
+
+    Slots:       main-hand, off-hand, helmet, chestplate, leggings, boots, hotbar, everything, randomly, slot <n>
+    Inventories: inventory, hotbar, armors
+
+  PROPERTIES (for WITH)
+    actor, message, amount, currency, months, tier (0 = Prime, 1-3 = Tier 1-3), gifted,
+    viewers, raiders, title (channel point reward name), badges (chat badges: subscriber, moderator, vip, ...)
+
+  COMPARATORS
+    =  >  >=  <  <=  IN RANGE [min,max]       for numbers
+    IS  CONTAINS  PREFIX  POSTFIX             for text (IS also works for true/false)
+
+  PLACEHOLDERS (inside DISPLAYING, item names and commands)
+    ${actor} ${streamer} ${amount} ${amount_i} ${amount_f} ${currency} ${months} ${tier} ${gifted}
+    ${viewers} ${raiders} ${title} ${message} ${event} ${date} ${time} ${unix}
+    DROP: ${itemName} ${itemCount}   SUMMON: ${mobName}   FOR: ${loopCount}   WAIT: ${waitTime}
+
+  Full manual: https://igoodie.gitbook.io/twitchspawn/
+*#
+
+
+# =====================================================================
+#  DONATIONS (Streamlabs / StreamElements tips)
+#  Amounts are in the donor's currency (see ${currency}).
+#  Biggest amounts first, since only the first matching rule runs.
+# =====================================================================
+
+# 100+  Keep inventory turns on for the rest of the world
 EXECUTE %/gamerule keep_inventory true%
+ DISPLAYING %[
+  {text:"${actor}", color:"gold"},
+  {text:" donated ${amount_f}${currency} and made you immortal!", color:"white"}
+ ]%
  ON Donation
- WITH amount >= 1000
+ WITH amount >= 100
 
-# Follow Rules
-DROP %diamond[custom_name="99.99\% Percent Real Diamond"]% 2
+# 50 - 99.99  A totem, plus regeneration right away
+BOTH
+ DROP minecraft:totem_of_undying
+ AND
+ EXECUTE %/effect give @s minecraft:regeneration 30 1%
+ DISPLAYING %[
+  {text:"${actor}", color:"gold"},
+  {text:" saved your life in advance! (${amount_f}${currency})", color:"white"}
+ ]%
+ ON Donation
+ WITH amount >= 50
+
+# 25 - 49.99  A named, enchanted sword. Placeholders work inside item components too
+DROP %minecraft:diamond_sword[enchantments={sharpness:5,unbreaking:3},custom_name="${actor}'s Blade"]% 1
+ ON Donation
+ WITH amount >= 25
+
+# 10 - 24.99  A small zombie horde
+FOR 3 TIMES
+ SUMMON minecraft:zombie ~ ~ ~5
+ DISPLAYING %[
+  {text:"${actor}", color:"red"},
+  {text:" sent a horde for ${amount_f}${currency}!", color:"white"}
+ ]%
+ ON Donation
+ WITH amount >= 10
+
+# 5 - 9.99  A random treat
+EITHER
+ DROP minecraft:golden_apple 2
+ OR
+ DROP minecraft:ender_pearl 8
+ OR
+ DROP minecraft:experience_bottle 32
+ ON Donation
+ WITH amount >= 5
+
+# Anything below 5
+DROP minecraft:cookie 5
+ ON Donation
+
+
+# =====================================================================
+#  TWITCH FOLLOWS
+# =====================================================================
+
+DROP %minecraft:diamond[custom_name="99.99\% Percent Real Diamond"]% 2
  ON Twitch Follow
 
-# Host Rules
-EXECUTE %/give @s stick 1%
- ON Twitch Host
- WITH viewers >= 10
 
-# Raid Rules
-EXECUTE %/weather thunder%
+# =====================================================================
+#  TWITCH SUBSCRIPTIONS
+# =====================================================================
+
+# Prime subs (tier 0)
+DROP %minecraft:golden_carrot[custom_name="Prime Carrot"]% 16
+ ON Twitch Subscription
+ WITH tier = 0
+
+# Long-time subscribers: 12+ months
+DROP %minecraft:elytra[custom_name="${actor}'s ${months} Month Wings"]% 1
+ ON Twitch Subscription
+ WITH months >= 12
+
+# 6+ months
+DROP minecraft:diamond 6
+ ON Twitch Subscription
+ WITH months >= 6
+
+# Everyone else
+DROP minecraft:golden_apple 2
+ ON Twitch Subscription
+
+# Gift subs
+DROP %minecraft:cake[custom_name="Gifted by ${actor}"]% 1
+ ON Twitch Subscription Gift
+
+
+# =====================================================================
+#  TWITCH BITS
+# =====================================================================
+
+# 1000+ bits  A storm, a pause for drama, then a charged creeper
+BOTH
+ EXECUTE %/weather thunder%
+ AND
+ WAIT 3 seconds
+ AND
+ SUMMON minecraft:creeper ~ ~ ~6 %{powered:1b}%
+ DISPLAYING %[
+  {text:"${actor}", color:"dark_purple"},
+  {text:" cheered ${amount_i} bits... run.", color:"white"}
+ ]%
+ ON Twitch Bits
+ WITH amount >= 1000
+
+# 100 - 999 bits  Weighted gamble: usually good, sometimes not
+EITHER
+ CHANCE 70 PERCENT DROP minecraft:iron_ingot 16
+ OR
+ CHANCE 25 PERCENT DROP minecraft:gold_ingot 8
+ OR
+ CHANCE 5 PERCENT SUMMON minecraft:silverfish ~ ~ ~2
+ ON Twitch Bits
+ WITH amount >= 100
+
+# Fewer than 100 bits
+DROP minecraft:arrow 16
+ ON Twitch Bits
+
+
+# =====================================================================
+#  TWITCH RAIDS
+# =====================================================================
+
+EXECUTE %/weather thunder% %/time set midnight%
+ DISPLAYING %[
+  {text:"${actor}", color:"red"},
+  {text:" raided with ${raiders} viewers. Night falls...", color:"white"}
+ ]%
  ON Twitch Raid
  WITH raiders > 100
+
+FOR 5 TIMES
+ SUMMON minecraft:skeleton ~ ~ ~6
+ ON Twitch Raid
+
+
+# =====================================================================
+#  TWITCH CHANNEL POINT REWARDS
+#  "title" must match the reward name on Twitch (not case-sensitive).
+# =====================================================================
+
+SUMMON minecraft:creeper ~ ~ ~4
+ ON Twitch Channel Point Reward
+ WITH title IS %Spawn a Creeper%
+
+SHUFFLE hotbar
+ ON Twitch Channel Point Reward
+ WITH title IS %Shuffle Hotbar%
+
+THROW main-hand
+ ON Twitch Channel Point Reward
+ WITH title IS %Drop It!%
+
+CHANGE helmet INTO %minecraft:carved_pumpkin[enchantments={binding_curse:1}]%
+ DISPLAYING %["Pumpkin head! You can't take it off..."]%
+ ON Twitch Channel Point Reward
+ WITH title IS %Pumpkin Head%
+
+EXECUTE %/effect give @s minecraft:speed 30 2%
+ ON Twitch Channel Point Reward
+ WITH title IS %Gotta Go Fast%
+
+
+# =====================================================================
+#  TWITCH CHAT COMMANDS
+#  Needs tokenChat in credentials.toml. Cooldowns are set in preferences.toml.
+# =====================================================================
+
+# Moderators only
+SUMMON minecraft:tnt ~ ~ ~4 %{fuse:80}%
+ DISPLAYING %[
+  {text:"${actor}", color:"red"},
+  {text:" lit a fuse!", color:"white"}
+ ]%
+ ON Twitch Chat Message
+ WITH message PREFIX !boom
+ WITH badges CONTAINS moderator
+
+# Subscribers only
+DROP minecraft:bread 4
+ ON Twitch Chat Message
+ WITH message PREFIX !feed
+ WITH badges CONTAINS subscriber
+
+# Anyone
+NOTHING
+ DISPLAYING %[
+  {text:"${actor}", color:"aqua"},
+  {text:" says: ${message}", color:"white"}
+ ]%
+ ON Twitch Chat Message
+ WITH message PREFIX !hello
+
+
+# =====================================================================
+#  YOUTUBE
+# =====================================================================
+
+DROP minecraft:emerald 3
+ ON Youtube Superchat
+
+DROP minecraft:golden_apple 1
+ ON Youtube Sponsor
+
+NOTHING
+ DISPLAYING %[
+  {text:"${actor}", color:"red"},
+  {text:" subscribed. Welcome!", color:"white"}
+ ]%
+ ON Youtube Subscription
+
+
+# =====================================================================
+#  CHARITY, PATREON AND TREATSTREAM
+# =====================================================================
+
+DROP minecraft:emerald 5
+ ON Tiltify Donation
+
+DROP minecraft:emerald 5
+ ON ExtraLife Donation
+
+DROP minecraft:emerald 5
+ ON DonorDrive Donation
+
+DROP minecraft:emerald 5
+ ON JustGiving Donation
+
+DROP minecraft:nether_star 1
+ ON Patreon Pledge
+
+DROP minecraft:cake 1
+ ON TreatStream Treat
+
+
+# =====================================================================
+#  ADVANCED EXAMPLES (turned off)
+#  Remove the # at the start of each line to use them.
+# =====================================================================
+
+# Clears your whole inventory. Very mean!
+#CLEAR everything
+# ON Donation
+# WITH amount >= 500
+
+# Gives every player on the server a diamond, not just you
+#REFLECT * DROP minecraft:diamond 1
+# ON Twitch Follow
+
+# Runs a script on your own computer. Only use scripts you trust!
+#OS_RUN LOCAL POWERSHELL %Start-Process "https://www.twitch.tv/${actor}"%
+# ON Twitch Follow
